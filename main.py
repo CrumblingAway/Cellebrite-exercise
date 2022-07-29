@@ -1,4 +1,6 @@
-from typing import Tuple
+from datetime import datetime
+import base64
+import matplotlib.pyplot as plt
 
 ID_LENGTH = 4
 LENGTH_OF_VALUE_LENGTH = 5
@@ -17,7 +19,7 @@ class Contact:
         self.first_name = first_name
         self.second_name = second_name
         self.phone = phone
-        self.time = time
+        self.time = datetime.fromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
         self.misc = misc
 
     def __repr__(self):
@@ -98,7 +100,11 @@ def save_contacts(id_set, id_values, filepath):
         decoded_contact_info_file.write(line + '\n')
     decoded_contact_info_file.close()
 
-
 if __name__ == '__main__':
     id_set, id_values = decode_lines("ex_v8.txt")
     save_contacts(id_set, id_values, "decoded_info.csv")
+
+    for id, img in id_values[MISC_KEY].items():
+        image = open(f"{id}.gif", "wb")
+        image.write(base64.b64decode(img))
+        image.close()
