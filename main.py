@@ -1,31 +1,15 @@
-from datetime import datetime
-import base64
-import matplotlib.pyplot as plt
+from contact import *
 
 ID_LENGTH = 4
 LENGTH_OF_VALUE_LENGTH = 5
 
+LINE_KEY_LENGTH = 4
 FIRST_NAME_KEY = 0x86B7
 LAST_NAME_KEY = 0x9E60
 PHONE_KEY = 0x5159
 TIME_KEY = 0xD812
-MISC_KEY = 0x6704
-KEYS = [FIRST_NAME_KEY, LAST_NAME_KEY, PHONE_KEY, TIME_KEY, MISC_KEY]
-
-class Contact:
-
-    def __init__(self, id, first_name, second_name, phone, time, misc):
-        self.id = id
-        self.first_name = first_name
-        self.second_name = second_name
-        self.phone = phone
-        self.time = datetime.fromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
-        self.misc = misc
-
-    def __repr__(self):
-        return f"id: {self.id}, first_name: {self.first_name}, second_name: {self.second_name}, phone: {self.phone}," \
-               f"time: {self.time}"
-
+IMAGE_KEY = 0x6704
+KEYS = [FIRST_NAME_KEY, LAST_NAME_KEY, PHONE_KEY, TIME_KEY, IMAGE_KEY]
 
 def read_encoded_line(line):
     """
@@ -64,14 +48,14 @@ def decode_lines(filepath):
         LAST_NAME_KEY: dict(),
         PHONE_KEY: dict(),
         TIME_KEY: dict(),
-        MISC_KEY: dict()
+        IMAGE_KEY: dict()
     }
     id_set = set()
 
     encoded_contact_info_file = open(filepath, "r")
     while current_line := encoded_contact_info_file.readline().rstrip():
-        line_key = int(current_line[:4], 16)
-        current_line = current_line[4:]
+        line_key = int(current_line[:LINE_KEY_LENGTH], 16)
+        current_line = current_line[LINE_KEY_LENGTH:]
 
         decoded_line = read_encoded_line(current_line)
         decoded_results[line_key].update(decoded_line)
@@ -82,29 +66,43 @@ def decode_lines(filepath):
     return id_set, decoded_results
 
 
-def save_contacts(id_set, id_values, filepath):
+def save_contacts_csv(filename, contacts):
     """
     Writes the contacts into filepath.
-    :param id_set: IDs of contacts
-    :param id_values: values associated with the IDs
-    :param filepath:
+    :param id_set: IDs of contacts.
+    :param id_values: values associated with the IDs.
+    :param filename: name of file without extension.
     :return:
     """
-    decoded_contact_info_file = open(filepath, "w")
-    decoded_contact_info_file.write("id,first_name,last_name,phone,time,misc\n")
-    for id in id_set:
-        line = f"{id}"
-        for key in KEYS:
-            value = id_values[key].get(id)
-            line += f",{value if value is not None else 'None'}"
-        decoded_contact_info_file.write(line + '\n')
+    decoded_contact_info_file = open(f"{filename}.csv", "w")
+    decoded_contact_info_file.write("id,first_name,last_name,phone,time,has_image\n")
+    # for id in id_set:
+    #     line = f"{id}"
+    #     for key in KEYS:
+    #         value = id_values[key].get(id)
+    #         line += f",{value if value is not None else 'None'}"
+    #     decoded_contact_info_file.write(line + '\n')
+    for contact in contacts:
+        line = f"{contact.id},{contact.first_name},{contact.last_name},{contact.phone},{contact.time}," \
+               f"{int(contact.encoded_image is not None)}\n"
+        decoded_contact_info_file.write(line)
     decoded_contact_info_file.close()
+
+def extract_contacts(id_set, id_values):
+    contacts = []
+    for id in id_set:
+        contacts.append(Contact(id,
+                                id_values[FIRST_NAME_KEY].get(id),
+                                id_values[LAST_NAME_KEY].get(id),
+                                id_values[PHONE_KEY].get(id),
+                                id_values[TIME_KEY].get(id),
+                                id_values[IMAGE_KEY].get(id)))
+    return contacts
 
 if __name__ == '__main__':
     id_set, id_values = decode_lines("ex_v8.txt")
-    save_contacts(id_set, id_values, "decoded_info.csv")
+    contacts = extract_contacts(id_set, id_values)
+    save_contacts_csv("decoded_info", contacts)
 
-    for id, img in id_values[MISC_KEY].items():
-        image = open(f"{id}.gif", "wb")
-        image.write(base64.b64decode(img))
-        image.close()
+    for contact in contacts:
+        contact.show_image()
