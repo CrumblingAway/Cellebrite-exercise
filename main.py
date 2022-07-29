@@ -1,3 +1,5 @@
+from typing import Tuple
+
 ID_LENGTH = 4
 LENGTH_OF_VALUE_LENGTH = 5
 
@@ -47,9 +49,14 @@ def read_encoded_line(line):
 
     return results
 
-if __name__ == '__main__':
-    encoded_contact_info_file = open("ex_v8.txt", "r")
 
+def decode_lines(filepath):
+    """
+    Decodes the given file per line and returns a set of contact IDs as well dictionaries of all the values associated
+    with said IDs.
+    :param filepath:
+    :return:
+    """
     decoded_results = {
         FIRST_NAME_KEY: dict(),
         LAST_NAME_KEY: dict(),
@@ -59,23 +66,39 @@ if __name__ == '__main__':
     }
     id_set = set()
 
+    encoded_contact_info_file = open(filepath, "r")
     while current_line := encoded_contact_info_file.readline().rstrip():
         line_key = int(current_line[:4], 16)
         current_line = current_line[4:]
-        decoded_line = read_encoded_line(current_line)
 
+        decoded_line = read_encoded_line(current_line)
         decoded_results[line_key].update(decoded_line)
         for id in decoded_line:
             id_set.add(id)
-
     encoded_contact_info_file.close()
 
-    decoded_contact_info_file = open("decoded_info.csv", "w")
+    return id_set, decoded_results
+
+
+def save_contacts(id_set, id_values, filepath):
+    """
+    Writes the contacts into filepath.
+    :param id_set: IDs of contacts
+    :param id_values: values associated with the IDs
+    :param filepath:
+    :return:
+    """
+    decoded_contact_info_file = open(filepath, "w")
     decoded_contact_info_file.write("id,first_name,last_name,phone,time,misc\n")
     for id in id_set:
         line = f"{id}"
         for key in KEYS:
-            value = decoded_results[key].get(id)
+            value = id_values[key].get(id)
             line += f",{value if value is not None else 'None'}"
         decoded_contact_info_file.write(line + '\n')
     decoded_contact_info_file.close()
+
+
+if __name__ == '__main__':
+    id_set, id_values = decode_lines("ex_v8.txt")
+    save_contacts(id_set, id_values, "decoded_info.csv")
