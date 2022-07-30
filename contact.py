@@ -13,15 +13,15 @@ class Contact:
     Class representing a contact on a phone.
     """
 
-    def __init__(self, id, first_name, last_name, phone, timestamp, image):
+    def __init__(self, id, first_name, last_name, phone, unix_timestamp, image):
         self.id = id
         self.first_name = first_name
         self.last_name = last_name
         self.phone = phone
-        self.timestamp = timestamp
+        self.unix_timestamp = unix_timestamp
         self.encoded_image = image
 
-        self.time = datetime.fromtimestamp(int(self.timestamp)).strftime(DATE_FORMAT)
+        self.time = datetime.fromtimestamp(int(self.unix_timestamp)).strftime(DATE_FORMAT)
         self.decoded_image = base64.b64decode(self.encoded_image) if self.encoded_image is not None else None
 
     def __repr__(self):

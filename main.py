@@ -1,3 +1,11 @@
+"""
+Cellebrite home assignment.
+
+Instructions:
+Call extract_contacts on the file containing the contact data to get a list of contact objects (implemented in
+contact.py) in no particular order.
+"""
+
 from contact import *
 
 ID_LENGTH = 4
@@ -10,6 +18,7 @@ PHONE_KEY = 0x5159
 TIME_KEY = 0xD812
 IMAGE_KEY = 0x6704
 KEYS = [FIRST_NAME_KEY, LAST_NAME_KEY, PHONE_KEY, TIME_KEY, IMAGE_KEY]
+
 
 def read_encoded_line(line):
     """
@@ -68,27 +77,25 @@ def decode_lines(filepath):
 
 def save_contacts_csv(filename, contacts):
     """
-    Writes the contacts into filepath.
+    Writes the contacts into filename in CSV format. Excludes image data of the contact.
     :param id_set: IDs of contacts.
     :param id_values: values associated with the IDs.
     :param filename: name of file without extension.
     :return:
     """
     decoded_contact_info_file = open(f"{filename}.csv", "w")
+
     decoded_contact_info_file.write("id,first_name,last_name,phone,time,has_image\n")
-    # for id in id_set:
-    #     line = f"{id}"
-    #     for key in KEYS:
-    #         value = id_values[key].get(id)
-    #         line += f",{value if value is not None else 'None'}"
-    #     decoded_contact_info_file.write(line + '\n')
     for contact in contacts:
         line = f"{contact.id},{contact.first_name},{contact.last_name},{contact.phone},{contact.time}," \
                f"{int(contact.encoded_image is not None)}\n"
         decoded_contact_info_file.write(line)
+        
     decoded_contact_info_file.close()
 
-def extract_contacts(id_set, id_values):
+def extract_contacts(filepath):
+    id_set, id_values = decode_lines(filepath)
+
     contacts = []
     for id in id_set:
         contacts.append(Contact(id,
@@ -100,8 +107,7 @@ def extract_contacts(id_set, id_values):
     return contacts
 
 if __name__ == '__main__':
-    id_set, id_values = decode_lines("ex_v8.txt")
-    contacts = extract_contacts(id_set, id_values)
+    contacts = extract_contacts("ex_v8.txt")
     save_contacts_csv("decoded_info", contacts)
 
     for contact in contacts:
